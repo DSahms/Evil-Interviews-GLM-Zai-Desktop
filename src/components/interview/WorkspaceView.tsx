@@ -47,6 +47,7 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'qa' | 'manuscript' | 'canon'>('qa')
   const [providerModalOpen, setProviderModalOpen] = useState(false)
+  const [providerModalTab, setProviderModalTab] = useState<'llm' | 'tts'>('llm')
   const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const [askingQuestion, setAskingQuestion] = useState(false)
   const [answeringTurnId, setAnsweringTurnId] = useState<string | null>(null)
@@ -206,13 +207,14 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setProviderModalOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => { setProviderModalTab('llm'); setProviderModalOpen(true) }}>
             <Settings className="w-4 h-4 mr-1.5" /> Provider
           </Button>
           <ExportMenu
             projectId={projectId}
             open={exportMenuOpen}
             onOpenChange={setExportMenuOpen}
+            onConfigureTts={() => { setProviderModalTab('tts'); setProviderModalOpen(true) }}
           />
         </div>
       </div>
@@ -315,7 +317,7 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
       </div>
 
       {providerModalOpen && (
-        <ProviderModal open={providerModalOpen} onOpenChange={setProviderModalOpen} />
+        <ProviderModal open={providerModalOpen} onOpenChange={setProviderModalOpen} initialTab={providerModalTab} />
       )}
     </div>
   )

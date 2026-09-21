@@ -162,3 +162,31 @@ model Provider {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+// TTS provider — SEPARATE from the LLM Provider because TTS providers have
+// different concerns (voices, audio formats, no chat-completions model field).
+// No TTS provider is configured by default. The application works normally
+// without one — audio is simply unavailable until the user adds one.
+model TtsProvider {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  // The provider-type discriminator. Determines which handler in
+  // src/lib/tts/registry.ts is invoked. Current supported value:
+  //   "openai-compatible"  — calls POST {baseUrl}/audio/speech
+  // Future supported values (architecture is ready, handlers not yet
+  // implemented):
+  //   "gemini"             — native Google Gemini TTS API
+  //   "local-piper"        — local Piper TTS HTTP server
+  //   "local-coqui"        — local Coqui TTS HTTP server
+  //   "custom"             — user-supplied HTTP endpoint with custom contract
+  providerType String
+  baseUrl      String
+  apiKey       String   @default("")
+  voice        String   @default("default")
+  model        String   @default("")  // for providers that support multiple models
+  responseFormat String @default("mp3") // "mp3" | "wav" | "ogg" | "flac"
+  isActive     Boolean  @default(false)
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

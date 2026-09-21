@@ -51,15 +51,33 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         })
       }
       case 'audio-qa': {
-        // Generate TTS audio of the magazine-style Q&A using z-ai-web-dev-sdk
+        // Synthesize audio via the TTS provider abstraction.
+        // If no TTS provider is configured, return HTTP 503 with a clear
+        // indicator — never silently fail, never fall back to a stub.
         const { content } = await exportMagazineQA(id)
-        const audioBuffer = await generateAudioViaScript(content, id)
-        return new NextResponse(audioBuffer, {
-          headers: {
-            'Content-Type': 'audio/mpeg',
-            'Content-Disposition': `attachment; filename="qa-${id}.mp3"`,
-          },
-        })
+        if (!content.trim()) {
+          return NextResponse.json({
+            error: 'No Q&A content to synthesize. Ask at least one question and get an answer first.',
+          }, { status: 400 })
+        }
+        const { synthesize, isTtsNotConfiguredError } = await import('@/lib/tts/provider')
+        try {
+          const result = await synthesize(content, { format: 'mp3' })
+          return new NextResponse(result.audio, {
+            headers: {
+              'Content-Type': `audio/${result.format}`,
+              'Content-Disposition': `attachment; filename="qa-${id}.${result.format}"`,
+            },
+          })
+        } catch (e) {
+          if (isTtsNotConfiguredError(e)) {
+            return NextResponse.json({
+              error: e.message,
+              ttsUnconfigured: true,
+            }, { status: 503 })
+          }
+          throw e
+        }
       }
       default:
         return NextResponse.json({ error: `Unknown format: ${format}` }, { status: 400 })
@@ -110,22 +128,13 @@ async function generateDocxViaScript(markdown: string, projectId: string): Promi
 }
 
 /**
- * Generate TTS audio of the magazine Q&A using z-ai-web-dev-sdk.
+ * TTS audio is now generated via the provider abstraction in
+ * src/lib/tts/provider.ts (see the audio-qa case above). The old
+ * z-ai-web-dev-sdk call site has been removed; the new abstraction allows
+ * any OpenAI-compatible TTS endpoint, native Gemini TTS (future), local
+ * Piper / Coqui (future), or a custom HTTP TTS contract (future).
+ *
+ * The manuscript text remains the authoritative artifact — stored in the
+ * database (Chapter.manuscriptSection) and exportable as markdown/PDF/DOCX
+ * independently of whether any TTS provider is configured.
  */
-async function generateAudioViaScript(markdown: string, _projectId: string): Promise<Buffer> {
-  // The z-ai-web-dev-sdk is installed via package.json. We invoke a Node
-  // script that calls the TTS endpoint, returns mp3 bytes.
-  const { execFile } = await import('node:child_process')
-  const { promisify } = await import('node:util')
-  const execFileAsync = promisify(execFile)
-  const fs = await import('node:fs/promises')
-  const path = await import('node:path')
-  const tmpDir = '/tmp/iv-exports'
-  await fs.mkdir(tmpDir, { recursive: true })
-  const mdPath = path.join(tmpDir, `${_projectId}-qa.md`)
-  const audioPath = path.join(tmpDir, `${_projectId}-qa.mp3`)
-  await fs.writeFile(mdPath, markdown, 'utf8')
-  // Truncate to ~2000 chars per TTS call limit; the script handles chunking.
-  await execFileAsync('node', ['/home/z/my-project/scripts/tts_qa.js', mdPath, audioPath], { timeout: 180000 })
-  return await fs.readFile(audioPath)
-}
