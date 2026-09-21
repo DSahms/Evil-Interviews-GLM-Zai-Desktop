@@ -1,0 +1,164 @@
+// Interviews with Evil — Prisma schema
+// Full provenance model: projects, chapters, turns, canon, entities, events,
+// contradictions, unresolved threads, user corrections, providers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id              String   @id @default(cuid())
+  characterName   String
+  whatToCall      String
+  interviewerBio  String
+  corpusPath      String
+  currentChapter  Int      @default(1)
+  status          String   @default("active") // "active" | "paused" | "archived"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  chapters       Chapter[]
+  turns          Turn[]
+  canon          Canon[]
+  entities       Entity[]
+  events         Event[]
+  contradictions Contradiction[]
+  threads        UnresolvedThread[]
+  corrections    UserCorrection[]
+}
+
+model Chapter {
+  id              String   @id @default(cuid())
+  projectId       String
+  order           Int
+  title           String
+  manuscriptSection String   @default("")
+  status          String   @default("pending") // "pending" | "in_progress" | "complete"
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  turns   Turn[]
+
+  @@unique([projectId, order])
+}
+
+model Turn {
+  id              String   @id @default(cuid())
+  projectId       String
+  chapterId       String
+  order           Int
+  question        String
+  answer          String   @default("")
+  manuscriptPart  String   @default("")
+  status          String   @default("questioned") // "questioned" | "answered" | "composed" | "regenerated"
+  canonExtracted  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  regeneratedFromId String?
+
+  project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapter  Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, chapterId, order])
+}
+
+model Canon {
+  id         String   @id @default(cuid())
+  projectId  String
+  key        String   // e.g. "voice", "trait", "claim", "rule"
+  value      String
+  provenance String   @default("subject") // "source" | "subject" | "user" | "generated"
+  turnId     String?
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+}
+
+model Entity {
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String
+  type       String   @default("person") // "person" | "place" | "object" | "organization" | "creature"
+  mentions   Int      @default(1)
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, name])
+}
+
+model Event {
+  id         String   @id @default(cuid())
+  projectId  String
+  name       String
+  date       String   @default("")
+  location   String   @default("")
+  description String  @default("")
+  source     String   @default("subject") // "source" | "subject" | "user"
+  turnId     String?
+  createdAt   DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model Contradiction {
+  id         String   @id @default(cuid())
+  projectId  String
+  claimA     String
+  sourceA    String
+  claimB     String
+  sourceB    String
+  status     String   @default("unresolved") // "unresolved" | "investigated" | "resolved"
+  turnId     String?
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model UnresolvedThread {
+  id         String   @id @default(cuid())
+  projectId  String
+  summary    String
+  lastTurnId String?
+  status     String   @default("open") // "open" | "pursued" | "closed"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model UserCorrection {
+  id         String   @id @default(cuid())
+  projectId  String
+  key        String
+  value      String
+  original   String   @default("")
+  reason     String   @default("")
+  createdAt  DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, key])
+}
+
+model Provider {
+  id         String   @id @default(cuid())
+  name       String   @unique
+  baseUrl    String
+  apiKey     String
+  model      String
+  isActive   Boolean  @default(false)
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

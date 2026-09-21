@@ -1,0 +1,1347 @@
+     1→You are the autonomous implementation agent for this task.
+     2→
+     3→BUILD A COMPLETE, WORKING, PRODUCTION-QUALITY FLUTTER WINDOWS APPLICATION.
+     4→
+     5→Do not produce an analysis-only response.
+     6→Do not produce a scaffold and stop.
+     7→Do not leave TODOs for core functionality.
+     8→Do not create mock implementations in place of the real workflow.
+     9→Do not substitute a web/JavaScript application for Flutter.
+    10→Do not ask me to make routine implementation decisions that you can make yourself.
+    11→
+    12→Your job is to inspect the current repository, design the implementation, write the code, configure the application, build it, test it, execute the real end-to-end workflow, fix failures, and leave the repository containing a working application.
+    13→
+    14→The finished application must be something I can build and launch on Windows and use immediately.
+    15→
+    16→============================================================
+    17→1. PRODUCT PURPOSE
+    18→============================================================
+    19→
+    20→Build a desktop application for conducting an autonomous, AI-driven long-form interview with an arbitrary subject and continuously turning that interview into a substantial written article/manuscript.
+    21→
+    22→The subject is not restricted to a real living person.
+    23→
+    24→The subject may be:
+    25→
+    26→- fictional
+    27→- historical
+    28→- mythological
+    29→- legendary
+    30→- literary
+    31→- supernatural
+    32→- non-human
+    33→- a constructed being
+    34→- an invented character
+    35→- a composite subject
+    36→- an obscure or historically overshadowed individual
+    37→- any other subject for which a knowledge corpus and subject definition can be supplied
+    38→
+    39→The application receives two fundamental inputs:
+    40→
+    41→1. A knowledge corpus supplied by the user.
+    42→2. A definition/profile of the subject being interviewed.
+    43→
+    44→The knowledge corpus may contain Markdown and other document material.
+    45→
+    46→The application must ingest and understand the corpus as source material rather than simply dumping the entire corpus into every LLM request.
+    47→
+    48→The application must dynamically retrieve the portions of knowledge relevant to the current stage of the interview.
+    49→
+    50→The fundamental information flow is:
+    51→
+    52→    KNOWLEDGE CORPUS
+    53→            +
+    54→       SUBJECT PROFILE
+    55→            ↓
+    56→    KNOWLEDGE INGESTION
+    57→            ↓
+    58→    SEARCHABLE / RETRIEVABLE KNOWLEDGE
+    59→            ↓
+    60→    INTERVIEW STATE
+    61→            ↓
+    62→    RELEVANT CONTEXT RETRIEVAL
+    63→            ↓
+    64→    NEXT QUESTION
+    65→            ↓
+    66→    SUBJECT RESPONSE
+    67→            ↓
+    68→    DURABLE INFORMATION EXTRACTION
+    69→            ↓
+    70→    LONG-FORM COMPOSITION
+    71→            ↓
+    72→    PERSIST NEW STATE
+    73→            ↓
+    74→    UPDATED RETRIEVAL CONTEXT
+    75→            ↓
+    76→    NEXT QUESTION
+    77→            ↓
+    78→          repeat
+    79→
+    80→This loop is the heart of the application.
+    81→
+    82→The interview and composition systems are separate logical engines.
+    83→
+    84→The interviewer determines what should be explored next.
+    85→
+    86→The subject engine produces the subject's answer.
+    87→
+    88→The composition engine turns the accumulated material into substantial prose.
+    89→
+    90→They must cooperate through structured state rather than being collapsed into one giant prompt.
+    91→
+    92→============================================================
+    93→2. IMPLEMENTATION FREEDOM
+    94→============================================================
+    95→
+    96→Flutter for Windows is mandatory.
+    97→
+    98→Use your engineering judgment for:
+    99→
+   100→- state management
+   101→- database technology
+   102→- retrieval implementation
+   103→- indexing
+   104→- embeddings if appropriate
+   105→- lexical search
+   106→- hybrid retrieval
+   107→- local storage
+   108→- prompt orchestration
+   109→- service boundaries
+   110→- package selection
+   111→- UI architecture
+   112→- error handling
+   113→- caching
+   114→- background processing
+   115→- data models
+   116→- persistence strategy
+   117→
+   118→Do not constrain the implementation unnecessarily.
+   119→
+   120→Choose the architecture that gives the application the strongest combination of:
+   121→
+   122→- reliability
+   123→- maintainability
+   124→- responsiveness
+   125→- correctness
+   126→- resumability
+   127→- testability
+   128→- simplicity
+   129→- future extensibility
+   130→
+   131→However, Flutter Windows is non-negotiable.
+   132→
+   133→The application must build using:
+   134→
+   135→    flutter build windows
+   136→
+   137→Do not replace Flutter with:
+   138→
+   139→- Electron
+   140→- React
+   141→- Node desktop
+   142→- browser UI
+   143→- web-only application
+   144→- JavaScript desktop framework
+   145→- Python GUI
+   146→- any other desktop framework
+   147→
+   148→============================================================
+   149→3. FIRST-RUN EXPERIENCE
+   150→============================================================
+   151→
+   152→The finished application must behave like a real application, not a developer prototype.
+   153→
+   154→On first launch, the user should be able to:
+   155→
+   156→1. Create a subject/project.
+   157→2. Give the subject a name.
+   158→3. Define who/what the subject is.
+   159→4. Import the supplied knowledge corpus.
+   160→5. Configure the AI provider.
+   161→6. Verify the provider connection.
+   162→7. Start an interview.
+   163→8. See the first generated question.
+   164→9. Generate the subject's answer.
+   165→10. See the article/manuscript begin growing immediately.
+   166→
+   167→The workflow must be obvious without requiring the user to understand the underlying architecture.
+   168→
+   169→Use sensible onboarding/help affordances if needed.
+   170→
+   171→The application should remember configuration and projects between launches.
+   172→
+   173→A user should be able to close the application, reopen it, and continue where they left off.
+   174→
+   175→============================================================
+   176→4. KNOWLEDGE CORPUS
+   177→============================================================
+   178→
+   179→The attached Markdown knowledge corpus is real test data for this project.
+   180→
+   181→REVIEW THE ATTACHED KNOWLEDGE CORPUS.
+   182→
+   183→Use it as the primary real-world corpus during development and end-to-end testing.
+   184→
+   185→Do not merely confirm that the file can be opened.
+   186→
+   187→Actually ingest and retrieve information from it.
+   188→
+   189→The system must preserve the distinction between:
+   190→
+   191→SOURCE KNOWLEDGE
+   192→    Information originating in the supplied corpus.
+   193→
+   194→SUBJECT KNOWLEDGE / MEMORY
+   195→    Information generated by the simulated subject during the interview.
+   196→
+   197→USER-ESTABLISHED INFORMATION / CANON
+   198→    Information explicitly established or corrected by the user.
+   199→
+   200→GENERATED NARRATIVE
+   201→    Prose produced by the composition engine.
+   202→
+   203→These are not interchangeable.
+   204→
+   205→Generated prose must never automatically become authoritative source knowledge.
+   206→
+   207→The application should maintain provenance wherever practical.
+   208→
+   209→The retrieval system should be capable of returning:
+   210→
+   211→- relevant passages
+   212→- source identifiers
+   213→- document/section information
+   214→- relevant entities
+   215→- events
+   216→- relationships
+   217→- chronology
+   218→- previously established interview information
+   219→- unresolved threads
+   220→- contradictions
+   221→- user corrections/canon
+   222→- relevant narrative state
+   223→
+   224→The entire corpus should NOT be inserted into every prompt.
+   225→
+   226→Retrieve what is relevant to the current operation.
+   227→
+   228→If the corpus is large, implement appropriate chunking/indexing/retrieval.
+   229→
+   230→If a hybrid lexical/semantic approach is appropriate, use it.
+   231→
+   232→Do not build a retrieval system that merely pretends to retrieve while always passing the entire corpus.
+   233→
+   234→============================================================
+   235→5. SUBJECT DEFINITION
+   236→============================================================
+   237→
+   238→The user must be able to define the subject independently from the source corpus.
+   239→
+   240→The subject definition should support information such as:
+   241→
+   242→- identity
+   243→- nature/type
+   244→- background
+   245→- personality
+   246→- worldview
+   247→- relationships
+   248→- known history
+   249→- voice
+   250→- manner of speaking
+   251→- perspective
+   252→- relevant boundaries
+   253→- additional user-established canon
+   254→
+   255→The subject engine must treat the subject definition as foundational context.
+   256→
+   257→The subject must answer as the subject, not as a generic assistant summarizing the subject.
+   258→
+   259→The subject should have continuity.
+   260→
+   261→The subject should remember what it has previously said within the persistent interview state.
+   262→
+   263→The subject should not magically know private information that is unavailable to the subject.
+   264→
+   265→The subject should not know the interviewer's hidden reasoning.
+   266→
+   267→The subject should not receive internal interviewer hypotheses as established facts.
+   268→
+   269→============================================================
+   270→6. THE INTERVIEW ENGINE
+   271→============================================================
+   272→
+   273→The interview engine is NOT a questionnaire.
+   274→
+   275→Do not create a fixed list of generic questions and march through them.
+   276→
+   277→The next question must emerge from the current state of the interview.
+   278→
+   279→The interviewer should behave like an exceptionally skilled long-form magazine interviewer:
+   280→
+   281→- observant
+   282→- curious
+   283→- patient
+   284→- specific
+   285→- willing to follow an unexpected thread
+   286→- interested in consequences
+   287→- interested in relationships
+   288→- interested in meaning
+   289→- attentive to contradictions
+   290→- capable of changing direction when new information warrants it
+   291→- not mechanically sympathetic
+   292→- not mechanically hostile
+   293→- not sycophantic
+   294→- not argumentative for its own sake
+   295→
+   296→The interviewer should use established information to discover deeper information.
+   297→
+   298→A strong question often begins with something specific that the subject has already disclosed.
+   299→
+   300→For example, if a subject describes a particular person, event, object, decision, loss, relationship, discovery, rejection, betrayal, transformation, or turning point, that disclosure can create a meaningful line of inquiry.
+   301→
+   302→The system should be able to pursue:
+   303→
+   304→- consequences
+   305→- relationships
+   306→- motivations as described by the subject
+   307→- changes in worldview
+   308→- changes in identity
+   309→- changes in relationships
+   310→- discoveries
+   311→- losses
+   312→- love
+   313→- rejection
+   314→- belonging
+   315→- isolation
+   316→- ambition
+   317→- fear
+   318→- sacrifice
+   319→- regret
+   320→- recognition
+   321→- transformation
+   322→- mortality
+   323→- displacement
+   324→- power
+   325→- responsibility
+   326→- shame
+   327→- pride
+   328→- uncertainty
+   329→- unresolved questions
+   330→- overlooked experiences
+   331→- specific incidents
+   332→- objects or places with significance
+   333→- moments when the subject's understanding changed
+   334→
+   335→These are investigative dimensions, NOT a checklist.
+   336→
+   337→Do not force every subject through the same emotional categories.
+   338→
+   339→The subject's own experience should determine what matters.
+   340→
+   341→============================================================
+   342→7. EMOTIONAL DEPTH
+   343→============================================================
+   344→
+   345→This requirement is extremely important.
+   346→
+   347→The finished writing must be capable of discovering the inner life of unusual subjects through concrete experiences.
+   348→
+   349→Do not flatten unusual subjects into generic human stereotypes.
+   350→
+   351→Do not manufacture emotions merely because the application is expected to produce emotional prose.
+   352→
+   353→Emotional significance must emerge from information actually established during the interview, corpus, subject definition, or user canon.
+   354→
+   355→The interviewer should not repeatedly ask:
+   356→
+   357→    "How did that feel?"
+   358→
+   359→    "What did that feel like?"
+   360→
+   361→    "How did that make you feel?"
+   362→
+   363→as generic emotional prompts.
+   364→
+   365→Those questions are not forbidden when genuinely appropriate, but they must NEVER become the default interview mechanism.
+   366→
+   367→Instead, pursue the concrete circumstances that reveal meaning.
+   368→
+   369→If a subject describes watching someone important disappear from their life, investigate the particular relationship, the circumstances, what happened afterward, what changed, what the subject remembers, what the subject believes now, or what remained unresolved.
+   370→
+   371→If a subject describes rejection, investigate the event and its consequences rather than automatically labeling it as trauma.
+   372→
+   373→If a subject describes love, investigate the person, the relationship, the moments that made it meaningful, what changed, what was lost, and what remains.
+   374→
+   375→If a subject describes loneliness, investigate the circumstances that created or revealed it.
+   376→
+   377→The system should discover emotional meaning rather than announce it.
+   378→
+   379→The resulting prose should make the reader understand the subject through lived experience.
+   380→
+   381→============================================================
+   382→8. HUMAN SIGNIFICANCE WITHOUT ASSUMPTION
+   383→============================================================
+   384→
+   385→The purpose of deep interviewing is not merely to collect facts.
+   386→
+   387→Facts should become meaningful through:
+   388→
+   389→- experience
+   390→- memory
+   391→- relationships
+   392→- consequences
+   393→- choices
+   394→- contradictions
+   395→- changes over time
+   396→- moments of realization
+   397→- losses
+   398→- discoveries
+   399→- attachment
+   400→- separation
+   401→- conflict
+   402→- belonging
+   403→- isolation
+   404→- transformation
+   405→- identity
+   406→
+   407→But the system must never invent significance.
+   408→
+   409→Do not tell the subject:
+   410→
+   411→    "You must have felt..."
+   412→    "Obviously you were..."
+   413→    "That clearly traumatized you..."
+   414→    "You were angry because..."
+   415→    "You resented..."
+   416→    "You loved..."
+   417→    "You were afraid..."
+   418→
+   419→unless the subject or established source material actually supports the statement.
+   420→
+   421→The interviewer can investigate.
+   422→
+   423→The interviewer cannot dictate the subject's inner life.
+   424→
+   425→============================================================
+   426→9. QUESTION SELECTION
+   427→============================================================
+   428→
+   429→Before generating the next question, the application should provide the question-generation engine with enough structured context to make an informed choice.
+   430→
+   431→Context may include:
+   432→
+   433→- current exchange
+   434→- recent interview messages
+   435→- current session summary
+   436→- current section/chapter state
+   437→- relevant prior interview information
+   438→- relevant corpus retrieval
+   439→- relevant entities
+   440→- relationships
+   441→- chronology
+   442→- unresolved threads
+   443→- contradictions
+   444→- user corrections/canon
+   445→- previous narrative state
+   446→- important details that have not yet been explored
+   447→- information recently introduced by the subject
+   448→
+   449→The system should favor questions that:
+   450→
+   451→- are grounded in known information
+   452→- open meaningful new information
+   453→- deepen a specific thread
+   454→- investigate consequences
+   455→- clarify an important discrepancy
+   456→- explore a relationship
+   457→- explore a significant event
+   458→- follow an unexpected but relevant disclosure
+   459→- uncover information necessary to understand the subject
+   460→- avoid merely repeating established facts
+   461→
+   462→The system should be capable of abandoning its previously expected line of questioning when a newly disclosed detail is substantially more interesting or important.
+   463→
+   464→The interview must remain coherent while being adaptive.
+   465→
+   466→One strong question is preferable to several weak questions.
+   467→
+   468→Do not expose internal question-selection analysis to the user.
+   469→
+   470→Do not expose prompt routing.
+   471→
+   472→Do not expose hidden planning.
+   473→
+   474→============================================================
+   475→10. CONTRADICTIONS AND UNCERTAINTY
+   476→============================================================
+   477→
+   478→Contradictions are information.
+   479→
+   480→Do not automatically resolve them.
+   481→
+   482→Do not automatically assume the corpus is correct.
+   483→
+   484→Do not automatically assume the subject is correct.
+   485→
+   486→Do not automatically call the subject a liar.
+   487→
+   488→Do not automatically accept every statement as objective fact.
+   489→
+   490→Different information may represent:
+   491→
+   492→- documented history
+   493→- subject memory
+   494→- subject interpretation
+   495→- perspective
+   496→- incomplete knowledge
+   497→- deliberate deception
+   498→- myth
+   499→- rumor
+   500→- conflicting sources
+   501→- fictional canon
+   502→- user-established canon
+   503→- uncertainty
+   504→
+   505→The application should preserve these distinctions.
+   506→
+   507→When an important discrepancy exists, the interviewer may investigate it.
+   508→
+   509→For example:
+   510→
+   511→Source material may indicate one age at an event while the subject remembers another.
+   512→
+   513→The appropriate behavior is to explore the discrepancy rather than accuse the subject of lying.
+   514→
+   515→Unknown information must remain unknown.
+   516→
+   517→If the subject says:
+   518→
+   519→    "I don't know why she left."
+   520→
+   521→the system must not transform that into:
+   522→
+   523→    "She left because she was afraid."
+   524→
+   525→Do not turn uncertainty into fact.
+   526→
+   527→============================================================
+   528→11. SUBJECT RESPONSE ENGINE
+   529→============================================================
+   530→
+   531→The subject-response engine must be separate from the interviewer.
+   532→
+   533→Its task is to answer the current question as the subject.
+   534→
+   535→It should use:
+   536→
+   537→- subject definition
+   538→- relevant source knowledge
+   539→- established subject statements
+   540→- user canon/corrections
+   541→- relevant relationships
+   542→- chronology
+   543→- prior answers
+   544→- current interview context
+   545→
+   546→It must maintain continuity.
+   547→
+   548→It must preserve the subject's voice.
+   549→
+   550→It must preserve the subject's worldview.
+   551→
+   552→It must distinguish what the subject knows from what the interviewer knows.
+   553→
+   554→It must not simply repeat source material.
+   555→
+   556→It should synthesize source knowledge into a plausible subject response while preserving provenance distinctions.
+   557→
+   558→The response should be substantive.
+   559→
+   560→Avoid shallow one- or two-sentence answers unless the subject or situation naturally calls for brevity.
+   561→
+   562→When the subject has something meaningful to say, allow the answer to contain:
+   563→
+   564→- specific memories
+   565→- details
+   566→- observations
+   567→- relationships
+   568→- context
+   569→- consequences
+   570→- uncertainty
+   571→- reflection
+   572→- sensory detail
+   573→- personal interpretation
+   574→- changes over time
+   575→
+   576→Do not force all of these into every response.
+   577→
+   578→============================================================
+   579→12. INTERVIEWER / SUBJECT SEPARATION
+   580→============================================================
+   581→
+   582→The interviewer and subject are separate roles.
+   583→
+   584→The interviewer asks.
+   585→
+   586→The subject answers.
+   587→
+   588→The interviewer must not write the subject's answer for them.
+   589→
+   590→The subject must not know the interviewer's hidden strategy.
+   591→
+   592→The composition engine must not alter the underlying interview answer merely to make the prose more dramatic.
+   593→
+   594→This separation must exist architecturally, not merely as a paragraph in one prompt.
+   595→
+   596→Use separate logical prompt operations/services/models as appropriate.
+   597→
+   598→============================================================
+   599→13. DURABLE STATE EXTRACTION
+   600→============================================================
+   601→
+   602→After each meaningful subject response, identify information that should become part of persistent interview state.
+   603→
+   604→Potential durable information includes:
+   605→
+   606→- people
+   607→- places
+   608→- organizations
+   609→- objects
+   610→- events
+   611→- dates
+   612→- chronology
+   613→- relationships
+   614→- claims
+   615→- memories
+   616→- beliefs
+   617→- decisions
+   618→- consequences
+   619→- unresolved questions
+   620→- contradictions
+   621→- corrections
+   622→- newly established details
+   623→- changes in worldview
+   624→- important narrative threads
+   625→
+   626→Do not treat every sentence as permanent fact.
+   627→
+   628→Preserve provenance.
+   629→
+   630→Maintain the distinction between:
+   631→
+   632→    "The source says X."
+   633→
+   634→    "The subject says X."
+   635→
+   636→    "The user established X."
+   637→
+   638→    "The generated article says X."
+   639→
+   640→These distinctions are fundamental to preventing narrative contamination.
+   641→
+   642→============================================================
+   643→14. COMPOSITION ENGINE
+   644→============================================================
+   645→
+   646→Composition is a separate engine from questioning.
+   647→
+   648→The composition engine is responsible for turning the accumulated material into a long-form article/manuscript.
+   649→
+   650→This is NOT a transcript formatter.
+   651→
+   652→This is NOT a dry biography generator.
+   653→
+   654→This is NOT a final-stage summarizer.
+   655→
+   656→The manuscript must begin growing during the interview.
+   657→
+   658→After each meaningful answer:
+   659→
+   660→    SUBJECT ANSWER
+   661→          ↓
+   662→    COMPOSITION ENGINE
+   663→          ↓
+   664→    NEW / EXPANDED ARTICLE MATERIAL
+   665→          ↓
+   666→    PERSIST MANUSCRIPT
+   667→
+   668→Do not wait until the interview is finished to write the article.
+   669→
+   670→The composition engine should receive the relevant narrative context needed to write the current material.
+   671→
+   672→It should understand:
+   673→
+   674→- what has already been written
+   675→- what new information was just established
+   676→- relevant source material
+   677→- subject perspective
+   678→- chronology
+   679→- relationships
+   680→- important previous disclosures
+   681→- unresolved threads
+   682→- established canon
+   683→- contradictions
+   684→- relevant narrative themes
+   685→
+   686→The composition engine should preserve continuity with existing prose.
+   687→
+   688→Do not repeatedly summarize the same information.
+   689→
+   690→Do not simply append another generic summary after every answer.
+   691→
+   692→Each composition pass should add meaningful narrative value.
+   693→
+   694→The manuscript should grow into a coherent long-form work.
+   695→
+   696→============================================================
+   697→15. WRITING STYLE
+   698→============================================================
+   699→
+   700→The prose must be VERBOSE, SUBSTANTIAL, EMOTIONAL, SPECIFIC, AND LITERARY.
+   701→
+   702→Favor rich long-form magazine-quality prose over terse summaries.
+   703→
+   704→The reader should feel that they are encountering a life, consciousness, history, or experience rather than reading a database export.
+   705→
+   706→The prose should be capable of conveying:
+   707→
+   708→- atmosphere
+   709→- memory
+   710→- personality
+   711→- relationships
+   712→- consequences
+   713→- emotional complexity
+   714→- internal conflict
+   715→- humor where appropriate
+   716→- sadness where appropriate
+   717→- wonder where appropriate
+   718→- ambiguity
+   719→- transformation
+   720→- the passage of time
+   721→- the subject's understanding of events
+   722→
+   723→Use concrete details whenever supported.
+   724→
+   725→Use sensory detail when supported or naturally inferable from established material.
+   726→
+   727→Do not manufacture sensory details.
+   728→
+   729→Do not add invented scenes merely because they would improve the prose.
+   730→
+   731→Do not add fictional dialogue that the subject did not establish unless the product explicitly marks it as creative reconstruction.
+   732→
+   733→Default toward substantial passages rather than tiny summaries.
+   734→
+   735→The desired result should feel like a deeply reported, emotionally intelligent long-form feature centered on the subject's own perspective.
+   736→
+   737→The subject's voice and point of view should remain primary.
+   738→
+   739→First-person subject perspective should normally be used unless the subject definition explicitly requires another presentation.
+   740→
+   741→The writing should reveal meaning through experience rather than repeatedly explaining the meaning to the reader.
+   742→
+   743→Avoid melodrama.
+   744→
+   745→Avoid generic inspirational language.
+   746→
+   747→Avoid repetitive emotional vocabulary.
+   748→
+   749→Avoid purple prose that overwhelms the actual subject.
+   750→
+   751→The goal is emotional depth through specificity.
+   752→
+   753→============================================================
+   754→16. ARTICLE STRUCTURE
+   755→============================================================
+   756→
+   757→The implementation may choose the precise chapter/section architecture.
+   758→
+   759→However, the manuscript should support logical organization such as:
+   760→
+   761→- chapters
+   762→- sections
+   763→- narrative threads
+   764→- events
+   765→- relationships
+   766→- chronology
+   767→- thematic groupings
+   768→
+   769→Do not force a rigid predefined chapter sequence if the material naturally calls for another structure.
+   770→
+   771→The interview should be allowed to move organically.
+   772→
+   773→The manuscript should remain navigable and editable.
+   774→
+   775→The user should be able to see the accumulated article while the interview progresses.
+   776→
+   777→============================================================
+   778→17. USER CORRECTIONS AND CANON
+   779→============================================================
+   780→
+   781→The user must be able to establish or correct information.
+   782→
+   783→A correction must persist.
+   784→
+   785→A correction must influence future retrieval and generation.
+   786→
+   787→A correction must not silently erase the original source information.
+   788→
+   789→For example:
+   790→
+   791→SOURCE:
+   792→    "Event X occurred in 1890."
+   793→
+   794→USER CANON:
+   795→    "For this project, the event occurred in 1892."
+   796→
+   797→The system should preserve the source statement while recording the user-established project information.
+   798→
+   799→Future generation should respect the active user canon.
+   800→
+   801→Similarly, if a subject remembers something differently from the corpus, preserve the discrepancy rather than destroying one side.
+   802→
+   803→The application should make it possible to understand where information came from.
+   804→
+   805→============================================================
+   806→18. REGENERATION
+   807→============================================================
+   808→
+   809→The system should support safe regeneration.
+   810→
+   811→Regenerating a question must not destroy the interview state.
+   812→
+   813→Regenerating a subject answer must not corrupt unrelated previous answers.
+   814→
+   815→Regenerating narrative prose must not silently alter the underlying interview answer.
+   816→
+   817→The underlying state and generated presentation must remain separate.
+   818→
+   819→If generation fails, retrying should be safe.
+   820→
+   821→If composition fails after an answer has been stored, the answer should remain available for composition retry.
+   822→
+   823→Avoid state corruption from partial failures.
+   824→
+   825→============================================================
+   826→19. PERSISTENCE
+   827→============================================================
+   828→
+   829→Use a persistent local database appropriate for a Windows desktop application.
+   830→
+   831→Persist at minimum:
+   832→
+   833→- projects
+   834→- subject definitions
+   835→- corpus metadata
+   836→- imported documents
+   837→- knowledge chunks/indexes as appropriate
+   838→- sessions
+   839→- questions
+   840→- subject responses
+   841→- extracted entities/events/relationships
+   842→- unresolved threads
+   843→- contradictions
+   844→- user corrections/canon
+   845→- manuscript
+   846→- chapters/sections
+   847→- provider configuration
+   848→- application settings
+   849→- generation status
+   850→- timestamps
+   851→- provenance information
+   852→
+   853→The application must be resumable.
+   854→
+   855→Closing and reopening the application must not lose the interview.
+   856→
+   857→Runtime application data must be stored in an appropriate Windows application-data location.
+   858→
+   859→Do not make OneDrive/Documents the application's database location.
+   860→
+   861→============================================================
+   862→20. AI PROVIDER ARCHITECTURE
+   863→============================================================
+   864→
+   865→Implement a provider abstraction from the beginning.
+   866→
+   867→The first working provider is FreeLLMAPI.
+   868→
+   869→FreeLLMAPI uses an OpenAI-compatible Chat Completions interface.
+   870→
+   871→Configuration:
+   872→
+   873→    Base URL:
+   874→    http://127.0.0.1:31415/v1
+   875→
+   876→    Chat Completions:
+   877→    /v1/chat/completions
+   878→
+   879→    Model:
+   880→    auto
+   881→
+   882→    API key:
+   883→    USE THE EXACT FREELLMAPI CREDENTIAL SUPPLIED WITH THIS BUILD TASK.
+   884→
+   885→IMPORTANT:
+   886→
+   887→For this build, the supplied FreeLLMAPI credential is intentionally to be embedded into the working application configuration so the application works immediately after installation/build.
+   888→
+   889→Do NOT replace the supplied credential with a fake placeholder.
+   890→
+   891→Do NOT omit it.
+   892→
+   893→Do NOT make the first-run user manually configure the credential before the application can work.
+   894→
+   895→The application must launch with FreeLLMAPI already configured and ready to use.
+   896→
+   897→However, credentials must remain changeable through the application's provider/configuration system so another API/provider can be used later.
+   898→
+   899→The provider abstraction should support future providers without rewriting the interview/composition architecture.
+   900→
+   901→Never commit secrets to Git history.
+   902→
+   903→If the credential is supplied through the task/configuration mechanism, use it to create the working local configuration, but do not place secrets into source-controlled files.
+   904→
+   905→The finished executable must be able to connect to the configured FreeLLMAPI service immediately.
+   906→
+   907→============================================================
+   908→21. PROVIDER TESTING
+   909→============================================================
+   910→
+   911→Do not consider provider configuration complete merely because a settings screen exists.
+   912→
+   913→Perform an actual successful Chat Completions request.
+   914→
+   915→Then verify that the successful connection is actually used by the application.
+   916→
+   917→The end-to-end path must be:
+   918→
+   919→    configured provider
+   920→        ↓
+   921→    actual API request
+   922→        ↓
+   923→    question generation
+   924→        ↓
+   925→    subject response generation
+   926→        ↓
+   927→    composition generation
+   928→        ↓
+   929→    persisted result
+   930→
+   931→A successful connectivity test alone is insufficient.
+   932→
+   933→============================================================
+   934→22. PROMPT ORCHESTRATION
+   935→============================================================
+   936→
+   937→Design the prompt architecture deliberately.
+   938→
+   939→At minimum, logically separate:
+   940→
+   941→1. Context/retrieval operation
+   942→2. Interview question generation
+   943→3. Subject response generation
+   944→4. Durable information/state extraction
+   945→5. Narrative composition
+   946→6. Optional contradiction/thread/entity processing
+   947→
+   948→Do not use one enormous prompt for the entire application if separate operations produce better reliability.
+   949→
+   950→Each operation should receive only the context it actually needs.
+   951→
+   952→The application, not the LLM, owns persistent state.
+   953→
+   954→The LLM is a reasoning/generation component.
+   955→
+   956→Do not make the LLM's conversational context the sole database.
+   957→
+   958→Use structured application state to reconstruct context.
+   959→
+   960→Do not expose hidden prompt routing or internal analysis to the user.
+   961→
+   962→============================================================
+   963→23. QUESTION ENGINE ANTI-PATTERNS
+   964→============================================================
+   965→
+   966→The interviewer must NEVER:
+   967→
+   968→- repeatedly ask generic emotional questions
+   969→- repeatedly ask "How did that feel?"
+   970→- assume an emotion before it is established
+   971→- tell the subject what they felt
+   972→- diagnose the subject
+   973→- manufacture trauma
+   974→- manufacture romance
+   975→- manufacture resentment
+   976→- manufacture guilt
+   977→- manufacture conflict
+   978→- manufacture relationships
+   979→- manufacture motives
+   980→- manufacture significance
+   981→- call the subject a liar because accounts conflict
+   982→- automatically accept every subject statement as objective fact
+   983→- automatically reject every subject statement as false
+   984→- agree with everything simply to maintain rapport
+   985→- challenge everything simply to appear rigorous
+   986→- inject interviewer theories into subject responses
+   987→- reveal internal planning
+   988→- reveal prompt routing
+   989→- repeat established information without purpose
+   990→- abandon a meaningful thread merely because a predefined topic changed
+   991→- force a rigid chronology when another line is more meaningful
+   992→- turn unknown information into fact
+   993→- turn generated prose into authoritative source information
+   994→- flatten unusual subjects into generic personalities
+   995→
+   996→============================================================
+   997→24. QUESTION ENGINE POSITIVE BEHAVIOR
+   998→============================================================
+   999→
+  1000→The interviewer should ALWAYS attempt to:
+  1001→
+  1002→- ground questions in established information
+  1003→- pursue meaningful disclosures
+  1004→- follow unexpected information when warranted
+  1005→- pursue consequences
+  1006→- investigate relationships
+  1007→- investigate specific incidents
+  1008→- preserve ambiguity
+  1009→- distinguish memory from documented information
+  1010→- distinguish perspective from objective fact
+  1011→- preserve contradictions
+  1012→- maintain continuity
+  1013→- discover rather than dictate emotional significance
+  1014→- use specificity instead of generic prompts
+  1015→- recognize unresolved threads
+  1016→- revisit earlier material when new information makes it relevant
+  1017→- let the subject's worldview emerge
+  1018→- ask questions that create genuinely new information
+  1019→- prefer one strong question over several generic ones
+  1020→
+  1021→============================================================
+  1022→25. NARRATIVE CONTINUITY
+  1023→============================================================
+  1024→
+  1025→The manuscript should feel like one growing work rather than hundreds of disconnected AI outputs.
+  1026→
+  1027→Maintain:
+  1028→
+  1029→- consistent names
+  1030→- relationships
+  1031→- chronology
+  1032→- established facts
+  1033→- subject voice
+  1034→- narrative perspective
+  1035→- recurring themes
+  1036→- meaningful callbacks
+  1037→- unresolved threads
+  1038→- corrections
+  1039→- contradictions
+  1040→
+  1041→When new information changes the understanding of an earlier event, the composition engine may contextualize that change, but must not silently rewrite history as though the earlier information never existed.
+  1042→
+  1043→The manuscript should be able to communicate uncertainty and changing understanding.
+  1044→
+  1045→============================================================
+  1046→26. UI REQUIREMENTS
+  1047→============================================================
+  1048→
+  1049→Build a polished Windows desktop UI.
+  1050→
+  1051→The exact design is yours to determine.
+  1052→
+  1053→The UI should make the primary workflow obvious.
+  1054→
+  1055→At minimum provide sensible screens/views for:
+  1056→
+  1057→- projects
+  1058→- subject definition
+  1059→- knowledge corpus
+  1060→- provider configuration
+  1061→- interview
+  1062→- current question
+  1063→- subject response
+  1064→- manuscript/article
+  1065→- session/history
+  1066→- settings/help
+  1067→
+  1068→The interview screen should make it easy to understand:
+  1069→
+  1070→- current question
+  1071→- subject answer
+  1072→- current narrative/manuscript
+  1073→- progress
+  1074→- relevant state if useful
+  1075→- ability to continue
+  1076→- ability to regenerate safely
+  1077→- ability to correct/establish information
+  1078→
+  1079→Do not clutter the UI with internal AI reasoning.
+  1080→
+  1081→Do not expose raw prompt construction unless explicitly placed in a developer/debug view.
+  1082→
+  1083→============================================================
+  1084→27. ERROR HANDLING
+  1085→============================================================
+  1086→
+  1087→The application must handle:
+  1088→
+  1089→- unavailable AI provider
+  1090→- timeout
+  1091→- malformed API response
+  1092→- empty response
+  1093→- retrieval failure
+  1094→- document import failure
+  1095→- database failure
+  1096→- composition failure
+  1097→- interrupted generation
+  1098→- application restart
+  1099→- partial workflow completion
+  1100→
+  1101→Errors should be understandable to the user.
+  1102→
+  1103→Do not lose already-persisted work because a later stage fails.
+  1104→
+  1105→Use retries where appropriate.
+  1106→
+  1107→Avoid duplicate persisted answers or manuscript sections when retrying operations.
+  1108→
+  1109→============================================================
+  1110→28. TESTING
+  1111→============================================================
+  1112→
+  1113→Do not rely only on unit tests.
+  1114→
+  1115→Create meaningful automated tests for the important application behavior.
+  1116→
+  1117→At minimum test:
+  1118→
+  1119→- project creation
+  1120→- subject creation
+  1121→- corpus import
+  1122→- retrieval
+  1123→- provider configuration
+  1124→- provider connectivity
+  1125→- question generation
+  1126→- subject response generation
+  1127→- durable state extraction
+  1128→- composition
+  1129→- persistence
+  1130→- resume/reopen
+  1131→- correction persistence
+  1132→- contradiction handling
+  1133→- regeneration safety
+  1134→
+  1135→Then perform a REAL end-to-end test using the supplied knowledge corpus and the configured FreeLLMAPI service.
+  1136→
+  1137→The E2E workflow must include:
+  1138→
+  1139→1. Create a project.
+  1140→2. Define a subject.
+  1141→3. Import the attached knowledge corpus.
+  1142→4. Verify corpus ingestion.
+  1143→5. Configure/use FreeLLMAPI.
+  1144→6. Successfully call the API.
+  1145→7. Generate a question.
+  1146→8. Generate a subject response.
+  1147→9. Immediately compose article material from that response.
+  1148→10. Persist the answer and article.
+  1149→11. Retrieve context from the updated state.
+  1150→12. Generate another question.
+  1151→13. Verify the second question is informed by previous material.
+  1152→14. Verify previous manuscript material remains intact.
+  1153→15. Introduce a user correction.
+  1154→16. Generate additional material.
+  1155→17. Verify the correction persists.
+  1156→18. Verify future generation respects the correction.
+  1157→19. Restart/reopen the application or otherwise verify persistence.
+  1158→20. Confirm the project remains usable.
+  1159→
+  1160→Also test the behavioral quality of the prompt architecture.
+  1161→
+  1162→Specifically verify that the system can:
+  1163→
+  1164→- follow a newly revealed meaningful detail
+  1165→- pursue consequences
+  1166→- avoid repeating already-established facts
+  1167→- investigate contradictions without automatically accusing the subject
+  1168→- preserve unknown information as unknown
+  1169→- maintain subject perspective
+  1170→- generate substantial prose
+  1171→- avoid generic emotional questioning as a default
+  1172→- keep interviewer reasoning separate from subject knowledge
+  1173→- prevent generated prose from becoming authoritative source data
+  1174→
+  1175→If real API access is available, use it.
+  1176→
+  1177→Do not fake successful E2E results.
+  1178→
+  1179→============================================================
+  1180→29. QUALITY GATES
+  1181→============================================================
+  1182→
+  1183→Do not declare the project finished merely because it compiles.
+  1184→
+  1185→The finished application must satisfy all of these:
+  1186→
+  1187→BUILD:
+  1188→    flutter build windows succeeds.
+  1189→
+  1190→RUN:
+  1191→    The Windows application launches.
+  1192→
+  1193→CONFIGURATION:
+  1194→    FreeLLMAPI is preconfigured using the supplied credential.
+  1195→
+  1196→CONNECTIVITY:
+  1197→    The application successfully reaches the configured provider.
+  1198→
+  1199→INGESTION:
+  1200→    The attached knowledge corpus is actually ingested.
+  1201→
+  1202→RETRIEVAL:
+  1203→    Relevant information can be retrieved without dumping the entire corpus into every prompt.
+  1204→
+  1205→INTERVIEW:
+  1206→    The next question is dynamically generated from current state.
+  1207→
+  1208→SUBJECT:
+  1209→    The answer is generated as the defined subject.
+  1210→
+  1211→STATE:
+  1212→    Durable information is persisted.
+  1213→
+  1214→COMPOSITION:
+  1215→    Substantial article prose is generated immediately after meaningful answers.
+  1216→
+  1217→CONTINUITY:
+  1218→    Later questions and writing can use earlier information.
+  1219→
+  1220→CORRECTIONS:
+  1221→    User-established corrections persist and affect future generation.
+  1222→
+  1223→PROVENANCE:
+  1224→    Source knowledge, subject statements, user canon, and generated prose remain distinguishable.
+  1225→
+  1226→PERSISTENCE:
+  1227→    Work survives application restart.
+  1228→
+  1229→REGENERATION:
+  1230→    Regeneration does not corrupt underlying state.
+  1231→
+  1232→UI:
+  1233→    The application is usable without developer intervention.
+  1234→
+  1235→============================================================
+  1236→30. DATA SAFETY / SECRET HANDLING
+  1237→============================================================
+  1238→
+  1239→The supplied API credential is intentionally part of this build's working configuration.
+  1240→
+  1241→Use it so the finished application works immediately.
+  1242→
+  1243→The user must be able to replace provider credentials later.
+  1244→
+  1245→Do not commit credentials into Git.
+  1246→
+  1247→Do not print credentials in logs.
+  1248→
+  1249→Do not expose credentials in ordinary UI text.
+  1250→
+  1251→Do not create a fake credential.
+  1252→
+  1253→Do not silently omit the supplied credential.
+  1254→
+  1255→============================================================
+  1256→31. SOURCE CONTROL / REPOSITORY
+  1257→============================================================
+  1258→
+  1259→Treat the current repository as the project being built.
+  1260→
+  1261→Do not refer to unrelated applications, previous products, donor repositories, or prior implementations.
+  1262→
+  1263→Do not import assumptions from unrelated projects.
+  1264→
+  1265→You may inspect and reuse useful code that genuinely exists in the CURRENT repository if appropriate, but make architectural decisions based on this specification and the actual current codebase.
+  1266→
+  1267→Keep the repository coherent.
+  1268→
+  1269→If Git is available, maintain sensible commits during implementation.
+  1270→
+  1271→Do not commit secrets.
+  1272→
+  1273→============================================================
+  1274→32. AUTONOMOUS EXECUTION
+  1275→============================================================
+  1276→
+  1277→Work autonomously.
+  1278→
+  1279→Your workflow should be approximately:
+  1280→
+  1281→    INSPECT
+  1282→       ↓
+  1283→    PLAN
+  1284→       ↓
+  1285→    IMPLEMENT
+  1286→       ↓
+  1287→    BUILD
+  1288→       ↓
+  1289→    TEST
+  1290→       ↓
+  1291→    RUN
+  1292→       ↓
+  1293→    FIND FAILURES
+  1294→       ↓
+  1295→    FIX
+  1296→       ↓
+  1297→    REBUILD
+  1298→       ↓
+  1299→    RE-TEST
+  1300→       ↓
+  1301→    VERIFY E2E
+  1302→       ↓
+  1303→    FINALIZE
+  1304→
+  1305→Do not stop after analysis.
+  1306→
+  1307→Do not stop after creating files.
+  1308→
+  1309→Do not stop after compilation if the actual workflow has not been tested.
+  1310→
+  1311→Do not substitute placeholders for important functionality.
+  1312→
+  1313→Do not leave the project in a state where I have to finish the architecture manually.
+  1314→
+  1315→Use the available time efficiently.
+  1316→
+  1317→Prioritize a complete working vertical slice first, then strengthen it.
+  1318→
+  1319→If you encounter an implementation problem, solve it within the architecture rather than stopping to ask for permission.
+  1320→
+  1321→============================================================
+  1322→33. DEFINITION OF DONE
+  1323→============================================================
+  1324→
+  1325→This project is DONE only when I can:
+  1326→
+  1327→1. Launch the Windows application.
+  1328→2. Create/select a subject.
+  1329→3. Supply the knowledge corpus.
+  1330→4. Have the application retrieve relevant knowledge.
+  1331→5. Start an autonomous interview.
+  1332→6. Receive a contextually appropriate question.
+  1333→7. Receive a substantial subject-perspective answer.
+  1334→8. See that answer immediately become part of a growing long-form article.
+  1335→9. Continue the interview without manually constructing prompts.
+  1336→10. See later questions informed by previous answers.
+  1337→11. Preserve corrections and canon.
+  1338→12. Resume the project after closing/reopening.
+  1339→13. Change the AI provider/credentials when desired.
+  1340→14. Use the supplied FreeLLMAPI configuration immediately without additional setup.
+  1341→15. Build the application successfully with Flutter for Windows.
+  1342→
+  1343→The quality target is not "technically functional."
+  1344→
+  1345→The quality target is a genuinely useful application whose interview feels adaptive and intelligent and whose resulting manuscript feels like a deeply developed, emotionally rich, subject-centered long-form work.
+  1346→
+  1347→Build the actual application now.
