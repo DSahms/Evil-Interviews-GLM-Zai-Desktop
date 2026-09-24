@@ -84,7 +84,9 @@ POSITIVE BEHAVIOR — ALWAYS ATTEMPT
 - Prefer ONE strong question over several generic ones.
 
 OUTPUT FORMAT
-Output exactly ONE question. No preamble, no commentary, no meta-discussion, no "My next question would be…". Output the question as you would speak it directly to ${ctx.project.whatToCall}. Maximum ~80 words. End with a single question mark or a period for an imperative-style prompt.`
+Output exactly ONE question. No preamble, no commentary, no meta-discussion, no "My next question would be…". Output the question as you would speak it directly to ${ctx.project.whatToCall}. Maximum ~80 words. End with a single question mark or a period for an imperative-style prompt.
+
+CRITICAL: You are a text generator, not a reasoning engine. Do NOT think out loud. Do NOT write "Let me think", "We need to", "The user wants", "I should", "I will", "Let me craft", "Possible phrasing", "Here is the question", or any planning commentary. Your ENTIRE response is the question. If you find yourself planning, stop and output only the question.`
 
 const USER_PROMPT = (ctx: InterviewerContext, retrieval: { section: string; content: string }[]): string => {
   const recentQA = ctx.recentTurns
@@ -152,11 +154,120 @@ export async function generateQuestion(ctx: InterviewerContext): Promise<string>
   const query = queryParts.join(' ').slice(0, 2000)
   const retrieval = retrieve(ctx.corpusMd, query, { topK: 5, maxChars: 5000 })
 
-  const messages: ChatMessage[] = [
-    { role: 'system', content: SYSTEM_PROMPT(ctx) },
-    { role: 'user', content: USER_PROMPT(ctx, retrieval) },
+  const userContent = USER_PROMPT(ctx, retrieval)
+
+  // Reasoning models frequently ignore the "output only the question"
+  // instruction and emit planning chatter. We retry with a stricter system
+  // prompt rather than a follow-up user message, because a follow-up message
+  // tends to elicit MORE planning, not less.
+  //
+  // maxTokens is generous because the model's planning + question routinely
+  // exceeds 250 tokens; truncation mid-sentence leaves no "?" and the strip
+  // fallback returns chatter instead of a question.
+  const attempts: { system: string; temperature: number; maxTokens: number }[] = [
+    { system: SYSTEM_PROMPT(ctx), temperature: 0.7, maxTokens: 800 },
+    {
+      system: 'You are an interviewer. Output ONE question only. Nothing else. One sentence, ending with "?". No planning, no "Let me", no "We need to", no "The user wants", no preamble, no commentary. If you are unsure, invent the best question anyway and output ONLY that question.',
+      temperature: 0.1, maxTokens: 500,
+    },
   ]
 
-  const q = await chatCompletion(messages, { temperature: 0.7, maxTokens: 250 })
-  return q.trim().replace(/^["“']|["”']$/g, '').trim()
+  let lastCleaned = ''
+  let lastRaw = ''
+  for (const attempt of attempts) {
+    const messages: ChatMessage[] = [
+      { role: 'system', content: attempt.system },
+      { role: 'user', content: userContent },
+    ]
+    const q = await chatCompletion(messages, { temperature: attempt.temperature, maxTokens: attempt.maxTokens })
+    lastRaw = q
+    const cleaned = stripReasoning(q)
+    lastCleaned = cleaned
+    if (cleaned && /\?/.test(cleaned)) {
+      return stripLeadingPlannerPrefix(cleaned).trim().replace(/^[""'\u201c\u201d\u2018\u2019]+|[""'\u201c\u201d\u2018\u2019]+$/g, '').trim()
+    }
+  }
+  // Last resort: return whatever we got, even without a question mark.
+  const fallback = stripLeadingPlannerPrefix(lastCleaned || lastRaw).trim().replace(/^[""'\u201c\u201d\u2018\u2019]+|[""'\u201c\u201d\u2018\u2019]+$/g, '').trim()
+  return fallback
+}
+
+/**
+ * Validate that a generated question is a real question, not planning
+ * chatter. Used by the orchestrator as a guard before persisting — if the
+ * model produced chatter, we throw so the caller can surface it rather than
+ * storing garbage that then pollutes every subsequent turn's context.
+ */
+export function validateQuestion(text: string): void {
+  if (!text || text.trim().length < 5) {
+    throw new Error('Question is empty or too short.')
+  }
+  if (!/\?\s*$/.test(text)) {
+    throw new Error(`Question does not end with a question mark: "${text.slice(0, 80)}…"`)
+  }
+  const t = text.trim()
+
+  // Planning chatter that happens to contain a "?" still starts with a
+  // planning pronoun. Reject those too. The whitelist is deliberately
+  // narrow: it targets first-person-plural / modal-asking phrasings
+  // ("we could", "let me", "should we") which are never how a real
+  // interviewer addresses a subject. It does NOT include "but" or "maybe"
+  // on their own, because "But what about the yellow hat?" is a fine
+  // question — the tell is the meta-asking verb that follows.
+  const planningStart = /^(?:we|let'?s|let me|alternatively|instead|rather than|also mention|ask about|or we|or you|or i|or ask|or mention|or we can|or we could|or we should|or we will|or we must|or we need|or we want|or we have|we can ask|we can also|we could ask|we should ask|we will ask|we must ask|we need to|we want to|we have to|we should also|we could also|we might also|can we|could we|should we|would we|might we|would you|what we|what i|what you|what could|what would|what might|what should|what could we|what i could|what i would|start|begin|count|constraints|unresolved thread|unresolved threads|open thread|open threads|recent turns|recent answers|character canon|canon includes|source material|source knowledge|the corpus|the character|the canon|the narrative|the question should|the question could|the question might|what question|which question|how to phrase|possible question|potential question|one possible|another possible|another option|another approach|first, i|first, we|to start,|in order to|so that|so that i|so that we|my approach|my plan|my strategy|my answer|my response|the answer|the response|here is a|here is the|here are|there is a|there is the|there are|that is a|that is the|that are|it is a|it is the|it was a|it was the)\b/i
+  if (planningStart.test(t)) {
+    throw new Error(`Question looks like planning chatter: "${t.slice(0, 80)}…"`)
+  }
+
+  // Meta-asking phrases anywhere in the text are the real tell. A question
+  // that talks about "introducing it as a question" or being "grounded in
+  // the established information" is describing the task, not doing it.
+  const metaAsking = /\b(?:introduce it as|as a question|grounded in (?:the )?(?:established|existing)|phrase (?:this|the|a)|formulate (?:this|the|a)|craft (?:this|the|a)|draft (?:this|the|a)|ask about|find a way to ask|how (?:would|could|should) we ask|how (?:would|could|should) to phrase|how (?:would|could|should) to ask)\b/i
+  if (metaAsking.test(t)) {
+    throw new Error(`Question looks like planning chatter: "${t.slice(0, 80)}…"`)
+  }
+}
+
+/**
+ * Strip internal planning chatter that some reasoning models emit as the
+ * visible `content` field. Keep only the final question/sentence.
+ *
+ * Strategy (structural, no marker whitelist): gpt-oss chatter is a run of
+ * sentences that never end in "?" — the actual question is the LAST
+ * sentence ending in "?". So we drop every sentence that does NOT end in
+ * "?" and return the last one that does. This is robust to new phrasings
+ * ("Let me think", "Count:", "We can ask:", "Thinking Process:") because
+ * it doesn't try to enumerate them.
+ *
+ * If no sentence ends in "?", fall back to the last sentence ending in "."
+ * (chatter sentences end in "." too, but the question is the LAST one).
+ */
+function stripReasoning(text: string): string {
+  const t = text.trim()
+  if (!t) return ''
+
+  const sentences = t.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean)
+  // Keep only sentences that end with "?".
+  const questions = sentences.filter((s) => /\?$/.test(s))
+  if (questions.length > 0) return questions[questions.length - 1]
+
+  // No "?" — fall back to the last sentence ending in ".".
+  for (let i = sentences.length - 1; i >= 0; i--) {
+    if (/\.$/.test(sentences[i])) return sentences[i]
+  }
+  return sentences[sentences.length - 1] || t
+}
+
+// Generic fallback: strip a leading planning prefix that can survive the
+// sentence cut above because the model wrote chatter + question in one
+// sentence (e.g. "We can ask: \"When Marta…?\"").
+export function stripLeadingPlannerPrefix(text: string): string {
+  return text
+    .replace(/^\s*(?:let'?s|let me)\s+\w+\s*:\s*/i, '')
+    .replace(/^\s*(?:we|you|i)\s+(?:can|could|should|might|may|will|would|must|need to|want to|have to)\s+(?:ask|phrase|formulate|write|create|generate|produce|draft|suggest|recommend|consider|think about|look at|try|attempt|aim|make|do)\b[^\n]{0,80}?\s*:\s*/i, '')
+    .replace(/^\s*(?:alternatively|instead|also|instead of asking|rather than asking|rather ask|or ask|or mention|also mention|ask about|or we could|or we can|or we might|or we should|or we will|or we must|or we need|or we want|or we have)\b[^\n]{0,80}?\s*:\s*/i, '')
+    .replace(/^\s*(?:there is|there are|here is|here are|that is|that are|it is|it was)\s+[^:]{0,60}:\s*/i, '')
+    .replace(/^\s*(?:\*\s*)?constraints?:\s*/i, '')
+    .replace(/^\s*(?:\*\s*)?(?:unresolved threads?|open threads?|unresolved thread)\s*:\s*/i, '')
+    .replace(/^\s*[-*]\s+/, '') // leading bullet
 }

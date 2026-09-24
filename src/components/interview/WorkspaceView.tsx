@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Loader2, Settings, FileDown, Plus, RefreshCw, BookOpen, MessageSquare, Brain, ArrowRight } from 'lucide-react'
+import { ArrowLeft, Loader2, Settings, FileDown, Plus, RefreshCw, BookOpen, MessageSquare, Brain, ArrowRight, Play, Pause, Zap } from 'lucide-react'
 import { toast } from 'sonner'
 import { ChapterNav } from './ChapterNav'
 import { QALog } from './QALog'
@@ -54,6 +54,8 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
   const [regeneratingQuestionFor, setRegeneratingQuestionFor] = useState<string | null>(null)
   const [regeneratingManuscriptFor, setRegeneratingManuscriptFor] = useState<string | null>(null)
   const [advancingChapter, setAdvancingChapter] = useState(false)
+  const [autoInterview, setAutoInterview] = useState(false)
+  const [autoProgress, setAutoProgress] = useState<{ done: number; total: number } | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -75,10 +77,10 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
   // Refresh state every 5s while any operation is in progress (so the UI
   // reflects canon extraction, manuscript updates, etc.)
   useEffect(() => {
-    if (!askingQuestion && !answeringTurnId && !regeneratingQuestionFor && !regeneratingManuscriptFor && !advancingChapter) return
+    if (!askingQuestion && !answeringTurnId && !regeneratingQuestionFor && !regeneratingManuscriptFor && !advancingChapter && !autoInterview) return
     const t = setInterval(() => void load(), 5000)
     return () => clearInterval(t)
-  }, [askingQuestion, answeringTurnId, regeneratingQuestionFor, regeneratingManuscriptFor, advancingChapter, load])
+  }, [askingQuestion, answeringTurnId, regeneratingQuestionFor, regeneratingManuscriptFor, advancingChapter, autoInterview, load])
 
   const handleAskNext = async () => {
     setAskingQuestion(true)
@@ -176,6 +178,28 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
     }
   }
 
+  const handleAutoInterview = async (maxTurns: number, maxChapters: number) => {
+    setAutoInterview(true)
+    setAutoProgress({ done: 0, total: maxTurns })
+    try {
+      const res = await fetch(`/api/projects/${projectId}/auto-interview`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxTurns, maxChapters }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Auto-interview failed')
+      toast.success(`Auto-interview complete`, { description: `${data.count} turn(s) across ${maxChapters} chapter(s).` })
+      setAutoProgress(null)
+      await load()
+    } catch (e) {
+      toast.error('Auto-interview failed', { description: e instanceof Error ? e.message : '' })
+      setAutoProgress(null)
+    } finally {
+      setAutoInterview(false)
+    }
+  }
+
   if (loading || !state) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -207,6 +231,21 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant={autoInterview ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => {
+              if (autoInterview) return
+              void handleAutoInterview(10, 3)
+            }}
+            disabled={autoInterview}
+          >
+            {autoInterview ? (
+              <><Pause className="w-4 h-4 mr-1.5 animate-pulse" /> Running…</>
+            ) : (
+              <><Zap className="w-4 h-4 mr-1.5" /> Auto-interview</>
+            )}
+          </Button>
           <Button variant="outline" size="sm" onClick={() => { setProviderModalTab('llm'); setProviderModalOpen(true) }}>
             <Settings className="w-4 h-4 mr-1.5" /> Provider
           </Button>
@@ -311,6 +350,12 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
               threadCount={state.unresolvedThreads.length}
               onAskNext={handleAskNext}
               askingQuestion={askingQuestion}
+              autoInterview={autoInterview}
+              autoProgress={autoProgress}
+              onAutoInterview={() => {
+                if (autoInterview) return
+                void handleAutoInterview(10, 3)
+              }}
             />
           </ScrollArea>
         </aside>
@@ -325,6 +370,7 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
 
 function RightPanel({
   project, currentChapter, turnCount, canonCount, entityCount, contradictionCount, threadCount, onAskNext, askingQuestion,
+  autoInterview, autoProgress, onAutoInterview,
 }: {
   project: Project
   currentChapter?: Chapter
@@ -335,6 +381,9 @@ function RightPanel({
   threadCount: number
   onAskNext: () => void
   askingQuestion: boolean
+  autoInterview: boolean
+  autoProgress: { done: number; total: number } | null
+  onAutoInterview: () => void
 }) {
   return (
     <div className="p-4 space-y-4">
@@ -356,16 +405,43 @@ function RightPanel({
 
       <Card className="p-4">
         <h3 className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Quick action</h3>
-        <Button onClick={onAskNext} disabled={askingQuestion} className="w-full">
+        <Button onClick={onAskNext} disabled={askingQuestion} className="w-full mb-2">
           {askingQuestion ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Asking…</>
           ) : (
             <><Plus className="w-4 h-4 mr-2" /> Ask next question</>
           )}
         </Button>
+        <Button
+          variant={autoInterview ? 'secondary' : 'outline'}
+          size="sm"
+          className="w-full"
+          onClick={onAutoInterview}
+          disabled={autoInterview}
+        >
+          {autoInterview ? (
+            <><Pause className="w-4 h-4 mr-2 animate-pulse" /> Running…</>
+          ) : (
+            <><Zap className="w-4 h-4 mr-2" /> Auto-interview</>
+          )}
+        </Button>
         <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-          Generates the next interviewer question for the current chapter, grounded in everything established so far.
+          Runs multiple Q&amp;A turns automatically across chapters. Great for bulk manuscript generation.
         </p>
+        {autoProgress && (
+          <div className="mt-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>Progress</span>
+              <span>{autoProgress.done}/{autoProgress.total}</span>
+            </div>
+            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300"
+                style={{ width: `${Math.min(100, (autoProgress.done / autoProgress.total) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card className="p-4">

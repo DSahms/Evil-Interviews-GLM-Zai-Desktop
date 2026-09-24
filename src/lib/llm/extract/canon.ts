@@ -43,7 +43,7 @@ export async function extractFromAnswer(
 EXTRACTION RULES
 - Extract only information that was ACTUALLY ESTABLISHED in the answer. Do not invent. Do not speculate. Do not promote uncertainty to fact.
 - Preserve provenance: most extracted items have provenance "subject" (the subject said it). Use "source" only if the subject is clearly reporting from documented knowledge they cited. Use "user" only if the user (interviewer) established it. Use "generated" never.
-- For canon keys, use stable categories: trait:${slug}, claim:${slug}, voice:${slug}, rule:${slug}. The slug should be a short kebab-case label (e.g., "trait:emotional-detachment", "claim:born-in-1906", "voice:formal-archaic", "rule:never-kills-children").
+- For canon keys, use stable categories: trait:slug, claim:slug, voice:slug, rule:slug. The slug should be a short kebab-case label (e.g., "trait:emotional-detachment", "claim:born-in-1906", "voice:formal-archaic", "rule:never-kills-children").
 - For entities: name (canonical), type (person/place/object/organization/creature), notes (optional).
 - For events: name, date (if mentioned), location (if mentioned), description (1-2 sentences).
 - For contradictions: only extract if the answer CONTRADICTS something already established (you won't see prior canon, so only extract contradictions that are explicit in this answer — e.g., "I told you X but actually Y" or "people say X but I remember Y").

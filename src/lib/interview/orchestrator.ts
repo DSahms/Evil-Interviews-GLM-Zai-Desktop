@@ -15,7 +15,7 @@
 import { db } from '@/lib/db'
 import { readCorpus } from '@/lib/storage/paths'
 import { CHAPTERS } from '@/lib/interview/chapters'
-import { generateQuestion, InterviewerContext } from '@/lib/llm/engines/interviewer'
+import { generateQuestion, validateQuestion, stripLeadingPlannerPrefix, InterviewerContext } from '@/lib/llm/engines/interviewer'
 import { generateAnswer, SubjectContext } from '@/lib/llm/engines/subject'
 import { composeSection, CompositionContext } from '@/lib/llm/engines/composition'
 import { extractFromAnswer, persistExtraction } from '@/lib/llm/extract/canon'
@@ -87,6 +87,12 @@ export async function nextQuestion(projectId: string, chapterOrder?: number): Pr
 
   const question = await generateQuestion(ctx)
 
+  // Guard: the reasoning model sometimes emits planning chatter even after
+  // stripping. Reject it here so it never pollutes the DB and the next turn's
+  // context. The caller (API route) returns a 500 with the message.
+  const cleanedQuestion = stripLeadingPlannerPrefix(question).trim()
+  validateQuestion(cleanedQuestion)
+
   // Mark chapter as in-progress
   if (chapter.status === 'pending') {
     await db.chapter.update({ where: { id: chapter.id }, data: { status: 'in_progress' } })
@@ -97,7 +103,7 @@ export async function nextQuestion(projectId: string, chapterOrder?: number): Pr
       projectId,
       chapterId: chapter.id,
       order: nextOrder,
-      question,
+      question: cleanedQuestion,
       answer: '',
       manuscriptPart: '',
       status: 'questioned',
@@ -107,7 +113,7 @@ export async function nextQuestion(projectId: string, chapterOrder?: number): Pr
   return {
     turn: {
       id: turn.id,
-      question: turn.question,
+      question: cleanedQuestion,
       chapterOrder: chapter.order,
       chapterTitle: chapter.title,
       order: turn.order,
@@ -229,11 +235,13 @@ export async function regenerateQuestion(projectId: string, turnId: string): Pro
   }
 
   const newQuestion = await generateQuestion(ctx)
+  const cleanedQuestion = stripLeadingPlannerPrefix(newQuestion).trim()
+  validateQuestion(cleanedQuestion)
   await db.turn.update({
     where: { id: turn.id },
-    data: { question: newQuestion, regeneratedFromId: turn.id, status: 'regenerated' },
+    data: { question: cleanedQuestion, regeneratedFromId: turn.id, status: 'regenerated' },
   })
-  return newQuestion
+  return cleanedQuestion
 }
 
 /**

@@ -137,6 +137,6 @@ export async function generateAnswer(ctx: SubjectContext): Promise<string> {
     { role: 'user', content: USER_PROMPT(ctx, retrieval) },
   ]
 
-  const a = await chatCompletion(messages, { temperature: 0.75, maxTokens: 900 })
+  const a = await chatCompletion(messages, { temperature: 0.75, maxTokens: 2000 })
   return a.trim().replace(/^["“']|["”']$/g, '').trim()
 }

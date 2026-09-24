@@ -117,11 +117,35 @@ export async function chatCompletion(
   }
 
   const data = await res.json()
-  const content: string | undefined = data?.choices?.[0]?.message?.content
-  if (!content) {
+  const message = data?.choices?.[0]?.message
+  if (!message) {
     throw new Error(
-      `Provider "${provider.name}" returned an empty or malformed response. ` +
+      `Provider "${provider.name}" returned a response with no message. ` +
       `Inspect the dev log for details.`
+    )
+  }
+  let content: string | undefined = message.content
+
+  // Some reasoning models (e.g. dots-3-note-preview via FreeLLMAPI "auto")
+  // emit internal planning in a separate `reasoning` field. With sufficient
+  // maxTokens they also populate `content` with the actual answer. If
+  // content is empty but reasoning exists, the model was truncated before
+  // producing the answer — we do NOT fall back to reasoning, because that
+  // reasoning is planning chatter, not a usable response.
+  if (!content || content.trim() === '') {
+    const reasoning: string | undefined = message.reasoning
+    if (reasoning && reasoning.trim() !== '') {
+      console.warn(
+        `[provider] "${provider.name}" returned empty content but non-empty reasoning ` +
+        `(${reasoning.trim().length} chars). The model was likely truncated ` +
+        `before producing the answer. Increase maxTokens on the calling ` +
+        `engine rather than falling back to reasoning chatter.`
+      )
+    }
+    throw new Error(
+      `Provider "${provider.name}" returned an empty content field. ` +
+      `If using a reasoning model, ensure maxTokens is large enough for ` +
+      `both the reasoning and the answer. Inspect the dev log for details.`
     )
   }
   return content
