@@ -22,6 +22,7 @@ export interface ChatOptions {
   temperature?: number
   maxTokens?: number
   signal?: AbortSignal
+  timeoutMs?: number
 }
 
 export interface LLMProvider {
@@ -87,9 +88,11 @@ export async function chatCompletion(
   }
   if (options.maxTokens) body.max_tokens = options.maxTokens
 
-  // 60s timeout per LLM call — prevents indefinite hang if provider stalls
+  // Configurable timeout per LLM call — prevents indefinite hang if provider stalls
+  // Default 60s, but can be overridden for long-running calls (e.g., full narrative)
+  const timeoutMs = options.timeoutMs ?? 60_000
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 60_000)
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
   
   // Combine user-provided signal with our timeout signal
   let signal: AbortSignal

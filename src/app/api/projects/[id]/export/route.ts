@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { exportMagazineQA, exportFirstPersonNarrative, exportManuscriptMarkdown } from '@/lib/export/exports'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300
+export const maxDuration = 600
 
 // POST /api/projects/[id]/export
 // Body: { format: 'magazine-qa' | 'first-person-narrative' | 'manuscript-md' | 'manuscript-pdf' | 'manuscript-docx' | 'audio-qa' }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { nextQuestion, answerTurn, advanceChapter, regenerateManuscript, loadProjectState } from '@/lib/interview/orchestrator'
+import { nextQuestion, answerTurn, advanceChapter, regenerateManuscript, loadProjectState, endInterview } from '@/lib/interview/orchestrator'
 import { db } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -68,7 +68,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           }
         }
 
-        // Advance to next chapter
+        // Advance to next chapter, or end the interview if we're on chapter 11
         if (currentChapterOrder < 11 && currentChapterOrder < targetChapters) {
           try {
             currentChapterOrder = await advanceChapter(id)
@@ -81,8 +81,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
             // Can't advance further (already at final chapter or error)
             break
           }
+        } else if (currentChapterOrder === 11) {
+          // Final chapter — end the interview and trigger final exports
+          try {
+            await endInterview(id)
+          } catch (e) {
+            console.error('[auto-interview] end-interview failed:', e instanceof Error ? e.message : e)
+          }
+          break
         } else {
-          // We're at the target chapter limit or final chapter
+          // We're at the target chapter limit but not chapter 11
           break
         }
       }

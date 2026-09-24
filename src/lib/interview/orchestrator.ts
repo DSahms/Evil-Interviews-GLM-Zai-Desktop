@@ -58,6 +58,11 @@ export async function loadProjectState(projectId: string) {
  */
 export async function nextQuestion(projectId: string, chapterOrder?: number): Promise<{ turn: { id: string; question: string; chapterOrder: number; chapterTitle: string; order: number } }> {
   const state = await loadProjectState(projectId)
+  // Guard: if the interview is already complete, refuse to generate more questions.
+  // Without this, the interviewer keeps spinning on chapter 11 forever.
+  if (state.project.status === 'complete') {
+    throw new Error('Interview is complete. All 11 chapters have been finished. Use the export endpoint to generate the final outputs.')
+  }
   const order = chapterOrder ?? state.project.currentChapter
   const chapter = state.chapters.find((c) => c.order === order)
   if (!chapter) throw new Error(`Chapter ${order} not found`)
@@ -295,4 +300,53 @@ export async function advanceChapter(projectId: string): Promise<number> {
   const cur = state.chapters.find((c) => c.order === current)
   if (cur) await db.chapter.update({ where: { id: cur.id }, data: { status: 'complete' } })
   return next
+}
+
+/**
+ * End the interview after chapter 11 is complete.
+ * Marks chapter 11 and the project as complete, regenerates the final
+ * chapter manuscript, and triggers the final export generation.
+ * Returns the paths to the three final outputs.
+ */
+export async function endInterview(projectId: string): Promise<{
+  status: string
+  chapter11Manuscript: string
+  magazineQA: string
+  firstPersonNarrative: string
+  manuscriptMarkdown: string
+}> {
+  const state = await loadProjectState(projectId)
+  if (state.project.status === 'complete') {
+    return {
+      status: 'already_complete',
+      chapter11Manuscript: state.chapters.find((c) => c.order === 11)?.manuscriptSection ?? '',
+      magazineQA: '',
+      firstPersonNarrative: '',
+      manuscriptMarkdown: '',
+    }
+  }
+  // Mark chapter 11 complete
+  const chapter11 = state.chapters.find((c) => c.order === 11)
+  if (!chapter11) throw new Error('Chapter 11 not found')
+  if (chapter11.status !== 'complete') {
+    await db.chapter.update({ where: { id: chapter11.id }, data: { status: 'complete' } })
+  }
+  // Regenerate the final chapter manuscript from all turns
+  const chapter11Manuscript = await regenerateManuscript(projectId, chapter11.id)
+  // Mark project complete
+  await db.project.update({ where: { id: projectId }, data: { status: 'complete', currentChapter: 11 } })
+  // Generate the three final outputs
+  const { exportMagazineQA } = await import('@/lib/export/exports')
+  const { exportFirstPersonNarrative } = await import('@/lib/export/exports')
+  const { exportManuscriptMarkdown } = await import('@/lib/export/exports')
+  const magazineQA = await exportMagazineQA(projectId)
+  const firstPersonNarrative = await exportFirstPersonNarrative(projectId)
+  const manuscriptMarkdown = await exportManuscriptMarkdown(projectId)
+  return {
+    status: 'complete',
+    chapter11Manuscript,
+    magazineQA: magazineQA.content,
+    firstPersonNarrative: firstPersonNarrative.content,
+    manuscriptMarkdown: manuscriptMarkdown.content,
+  }
 }

@@ -190,5 +190,10 @@ Write the first-person encounter story of ${ctx.project.whatToCall}. Long, liter
     },
   ]
 
-  return await chatCompletion(messages, { temperature: 0.8, maxTokens: 6000 })
+  return await chatCompletion(messages, {
+    temperature: 0.8,
+    maxTokens: 6000,
+    // Full narrative generation is long-running; allow up to 5 minutes.
+    timeoutMs: 300_000,
+  })
 }

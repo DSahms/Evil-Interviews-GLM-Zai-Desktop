@@ -189,14 +189,33 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Auto-interview failed')
-      toast.success(`Auto-interview complete`, { description: `${data.count} turn(s) across ${maxChapters} chapter(s).` })
       setAutoProgress(null)
+      if (data.results?.length > 0) {
+        toast.success(`Auto-interview complete`, { description: `${data.count} turn(s) across ${maxChapters} chapter(s). Interview ended and exports generated.` })
+      } else {
+        toast.success(`Auto-interview ran`, { description: `${data.count} turn(s) processed.` })
+      }
       await load()
     } catch (e) {
       toast.error('Auto-interview failed', { description: e instanceof Error ? e.message : '' })
       setAutoProgress(null)
     } finally {
       setAutoInterview(false)
+    }
+  }
+
+  const handleEndInterview = async () => {
+    setEndingInterview(true)
+    try {
+      const res = await fetch(`/api/projects/${projectId}/end-interview`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to end interview')
+      toast.success('Interview ended', { description: 'All 11 chapters complete. Final exports generated.' })
+      await load()
+    } catch (e) {
+      toast.error('Failed to end interview', { description: e instanceof Error ? e.message : '' })
+    } finally {
+      setEndingInterview(false)
     }
   }
 
@@ -244,6 +263,21 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
               <><Pause className="w-4 h-4 mr-1.5 animate-pulse" /> Running…</>
             ) : (
               <><Zap className="w-4 h-4 mr-1.5" /> Auto-interview</>
+            )}
+          </Button>
+          <Button
+            variant={endingInterview ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => {
+              if (endingInterview) return
+              void handleEndInterview()
+            }}
+            disabled={endingInterview || project.currentChapter < 11 || project.status === 'complete'}
+          >
+            {endingInterview ? (
+              <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> Ending…</>
+            ) : (
+              <><Check className="w-4 h-4 mr-1.5" /> End Interview</>
             )}
           </Button>
           <Button variant="outline" size="sm" onClick={() => { setProviderModalTab('llm'); setProviderModalOpen(true) }}>
