@@ -185,7 +185,7 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
       const res = await fetch(`/api/projects/${projectId}/auto-interview`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ maxTurns, maxChapters }),
+        body: JSON.stringify({ maxTurns, maxChapters, regenerateManuscriptPerChapter: true }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Auto-interview failed')
@@ -236,7 +236,7 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
             size="sm"
             onClick={() => {
               if (autoInterview) return
-              void handleAutoInterview(10, 3)
+              void handleAutoInterview(100, 11)
             }}
             disabled={autoInterview}
           >
@@ -354,7 +354,7 @@ export function WorkspaceView({ projectId, onBack }: WorkspaceViewProps) {
               autoProgress={autoProgress}
               onAutoInterview={() => {
                 if (autoInterview) return
-                void handleAutoInterview(10, 3)
+                void handleAutoInterview(100, 11)
               }}
             />
           </ScrollArea>

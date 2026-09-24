@@ -87,6 +87,22 @@ export async function chatCompletion(
   }
   if (options.maxTokens) body.max_tokens = options.maxTokens
 
+  // 60s timeout per LLM call — prevents indefinite hang if provider stalls
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 60_000)
+  
+  // Combine user-provided signal with our timeout signal
+  let signal: AbortSignal
+  if (options.signal) {
+    // Create a new AbortController that aborts when either signal aborts
+    const combined = new AbortController()
+    options.signal.addEventListener('abort', () => combined.abort(options.signal.reason))
+    controller.signal.addEventListener('abort', () => combined.abort(controller.signal.reason))
+    signal = combined.signal
+  } else {
+    signal = controller.signal
+  }
+
   let res: Response
   try {
     res = await fetch(url, {
@@ -96,9 +112,10 @@ export async function chatCompletion(
         Authorization: `Bearer ${provider.apiKey}`,
       },
       body: JSON.stringify(body),
-      signal: options.signal,
+      signal,
     })
   } catch (e) {
+    clearTimeout(timeoutId)
     const msg = e instanceof Error ? e.message : String(e)
     throw new Error(
       `Provider "${provider.name}" is unreachable at ${url}. ` +
